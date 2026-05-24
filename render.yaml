@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: perfagent-backend
+    env: docker
+    region: oregon # or your preferred region
+    plan: free # or starter
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    envVars:
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: GEMINI_API_KEY # Make sure to set this in the Render Dashboard
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "*" # Set this to your frontend URL in production
+      - key: DATABASE_PATH
+        value: /data/performance.db
+    disk:
+      name: perfagent-data
+      mountPath: /data
+      sizeGB: 1
