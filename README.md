@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # PerfAgent
 
 AI-powered Real User Monitoring with Google Gemini. Capture Core Web Vitals, detect regressions, and get actionable insights.
@@ -64,3 +65,6 @@ npm run dev
 - Backend: FastAPI, Python 3.11+
 - Database: SQLite (Local, aiosqlite)
 - AI: Google Gemini 1.5 Flash
+=======
+# VitaLens-
+>>>>>>> 22b3450919bcfdec85f590c45bd27183121dbbee
