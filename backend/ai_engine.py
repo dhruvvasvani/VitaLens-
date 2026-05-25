@@ -1,10 +1,13 @@
 import os
 import json
+import logging
 from typing import Optional
 import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
 
@@ -126,6 +129,21 @@ def build_user_prompt(aggregated, recent, errors, navigation, budgets, device_br
 
 
 async def analyze_performance(aggregated, recent, errors, navigation, budgets, device_breakdown, url_filter=None):
+    if os.getenv("MOCK_AI_RESPONSE") == "true":
+        return {
+            "overall_score": 85,
+            "overall_rating": "good",
+            "summary": "Mock AI response for testing purposes.",
+            "issues": [],
+            "quick_wins": ["Mock win 1"],
+            "regression_detected": False,
+            "regression_details": None,
+            "performance_score_breakdown": {
+                "lcp_score": 20, "cls_score": 25, "inp_score": 20, "ttfb_score": 20
+            },
+            "next_steps": ["Mock step 1"]
+        }
+
     model = genai.GenerativeModel(
         model_name="gemini-2.5-flash",
         generation_config=genai.GenerationConfig(
@@ -136,8 +154,21 @@ async def analyze_performance(aggregated, recent, errors, navigation, budgets, d
     )
 
     prompt = build_user_prompt(aggregated, recent, errors, navigation, budgets, device_breakdown, url_filter)
-    response = await model.generate_content_async(prompt)
-    raw = response.text.strip()
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            import asyncio
+            response = await model.generate_content_async(prompt)
+            raw = response.text.strip()
+            break
+        except Exception as e:
+            if attempt == max_retries - 1:
+                logger.error(f"Gemini API failed after {max_retries} attempts: {e}")
+                raw = "{}" # Fallback to trigger JSON decode error fallback below
+            else:
+                logger.warning(f"Gemini API error (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {2 ** attempt}s...")
+                await asyncio.sleep(2 ** attempt)
 
     if raw.startswith("```"):
         parts = raw.split("```")
@@ -145,7 +176,24 @@ async def analyze_performance(aggregated, recent, errors, navigation, budgets, d
         if raw.startswith("json"):
             raw = raw[4:]
 
-    return json.loads(raw.strip())
+    try:
+        return json.loads(raw.strip())
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON in analyze_performance: {e}\nRaw: {raw}")
+        return {
+            "overall_score": 0,
+            "overall_rating": "poor",
+            "summary": "AI Agent failed to return valid JSON data.",
+            "issues": [],
+            "quick_wins": [],
+            "regression_detected": False,
+            "regression_details": None,
+            "performance_score_breakdown": {
+                "lcp_score": 0, "cls_score": 0, "inp_score": 0, "ttfb_score": 0
+            },
+            "next_steps": []
+        }
+
 
 
 async def generate_code_fix(metric_name: str, avg_value: float, context: str) -> str:
@@ -203,6 +251,21 @@ Be extremely specific, professional, and constructive. Never give generic advice
 
 
 async def analyze_code_with_metrics(code_snippet: str, metrics: list, url_filter: Optional[str] = None) -> dict:
+    if os.getenv("MOCK_AI_RESPONSE") == "true":
+        return {
+            "performance_score": {
+                "grade": "Good",
+                "problem_areas": []
+            },
+            "critical_issues": [],
+            "optimized_code": "/* Mock optimized code */",
+            "additional_recommendations": {
+                "quick_wins": ["Mock quick win"],
+                "long_term": ["Mock long term"],
+                "estimated_gain_percent": "10%"
+            }
+        }
+
     model = genai.GenerativeModel(
         model_name="gemini-2.5-flash",
         generation_config=genai.GenerationConfig(
@@ -227,8 +290,20 @@ async def analyze_code_with_metrics(code_snippet: str, metrics: list, url_filter
     
     prompt = "\n".join(lines)
     
-    response = await model.generate_content_async(prompt)
-    raw = response.text.strip()
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            import asyncio
+            response = await model.generate_content_async(prompt)
+            raw = response.text.strip()
+            break
+        except Exception as e:
+            if attempt == max_retries - 1:
+                logger.error(f"Gemini API failed after {max_retries} attempts: {e}")
+                raw = "{}" # Fallback
+            else:
+                logger.warning(f"Gemini API error (attempt {attempt + 1}/{max_retries}): {e}. Retrying...")
+                await asyncio.sleep(2 ** attempt)
 
     if raw.startswith("```"):
         parts = raw.split("```")
@@ -236,4 +311,28 @@ async def analyze_code_with_metrics(code_snippet: str, metrics: list, url_filter
         if raw.startswith("json"):
             raw = raw[4:]
 
-    return json.loads(raw.strip())
+    try:
+        return json.loads(raw.strip())
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse JSON in analyze_code_with_metrics: {e}\nRaw: {raw}")
+        return {
+            "performance_score": {
+                "grade": "Poor",
+                "problem_areas": ["Analysis Error"]
+            },
+            "critical_issues": [{
+                "title": "AI Parsing Error",
+                "location": "N/A",
+                "impact": "High",
+                "explanation": "Failed to parse the AI output.",
+                "fix_suggestion": "Check the AI model prompt or logs.",
+                "fix_confidence_score": "Low"
+            }],
+            "optimized_code": "/* Error parsing AI output */",
+            "additional_recommendations": {
+                "quick_wins": [],
+                "long_term": [],
+                "estimated_gain_percent": "0%"
+            }
+        }
+

@@ -3,15 +3,16 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import dynamic from "next/dynamic";
 import MetricCard from "@/components/MetricCard";
-import TrendChart from "@/components/TrendChart";
+const TrendChart = dynamic(() => import("@/components/TrendChart"), { ssr: false });
 import AIInsightsPanel from "@/components/AIInsightsPanel";
 import ErrorTable from "@/components/ErrorTable";
-import CWVRadar from "@/components/CWVRadar";
-import HourlyChart from "@/components/HourlyChart";
+const CWVRadar = dynamic(() => import("@/components/CWVRadar"), { ssr: false });
+const HourlyChart = dynamic(() => import("@/components/HourlyChart"), { ssr: false });
 import BudgetPanel from "@/components/BudgetPanel";
 import AlertsPanel from "@/components/AlertsPanel";
-import WaterfallChart from "@/components/WaterfallChart";
+const WaterfallChart = dynamic(() => import("@/components/WaterfallChart"), { ssr: false });
 import LiveFeed from "@/components/LiveFeed";
 import CodeAnalyzerPanel from "@/components/CodeAnalyzerPanel";
 
