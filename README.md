@@ -19,7 +19,15 @@ Instead of just giving you a boring chart that says "your website is slow," Vita
 
 Want to run VitaLens on your own machine? It's surprisingly simple!
 
-### 1. Spin up the Backend
+### 1. Configure Environment Variables
+You'll need your own API keys to run this locally. We've provided example files to get you started:
+
+- **Backend Keys**: Copy `backend/.env.example` to `backend/.env` and insert your Gemini API key.
+- **Frontend Keys**: Copy `frontend/.env.example` to `frontend/.env.local` and insert your Supabase project URL and anon key.
+
+*(Your actual `.env` files are ignored by git, keeping your secrets safe!)*
+
+### 2. Spin up the Backend
 ```bash
 # Move into the backend folder
 cd backend
@@ -30,10 +38,12 @@ venv\Scripts\activate  # (Use `source venv/bin/activate` if you're on Mac/Linux!
 
 # Install the Python dependencies
 pip install -r requirements.txt
-```
-*(Don't forget to create a `.env` file inside the `backend` folder and add your `GEMINI_API_KEY`!)*
 
-### 2. Launch the Frontend
+# Start the FastAPI server
+uvicorn main:app --reload
+```
+
+### 3. Launch the Frontend
 ```bash
 # Open a new terminal and move to the frontend folder
 cd frontend
